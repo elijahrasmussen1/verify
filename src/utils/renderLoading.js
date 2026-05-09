@@ -18,7 +18,15 @@ const path = require('path');
 
 // Read the template once at startup and cache it.
 const TEMPLATE_PATH = path.join(__dirname, '..', '..', 'views', 'loading.html');
-const TEMPLATE      = fs.readFileSync(TEMPLATE_PATH, 'utf8');
+
+let TEMPLATE;
+try {
+  TEMPLATE = fs.readFileSync(TEMPLATE_PATH, 'utf8');
+} catch (err) {
+  throw new Error(
+    `[renderLoading] Could not read loading template at "${TEMPLATE_PATH}": ${err.message}`
+  );
+}
 
 function renderLoading(nextUrl, type) {
   // JSON.stringify safely escapes all characters that could break out of a JS

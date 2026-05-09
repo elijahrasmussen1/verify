@@ -37,12 +37,12 @@ User
 
 ### Why two loading screens?
 
-The loading page (`/loading.html?next=<url>&type=<discord|roblox>`) appears **twice**:
+The loading page (`views/loading.html`) appears **twice** during the flow:
 
-1. **Before Discord OAuth** — while the browser is about to leave your site.
-2. **After Discord, before Roblox OAuth** — to smooth the transition between the two providers.
+1. **Before Discord OAuth** — rendered by `GET /discord/verify` while the browser is about to leave your site.
+2. **After Discord, before Roblox OAuth** — rendered by `GET /discord/callback` to smooth the transition between the two providers.
 
-The page auto-redirects after ~2.4 s via JavaScript. The target URL is stored in the JS variable `NEXT_URL` (read from the `next` query parameter), so the Express server never needs to render URLs into the template.
+The redirect target URL is **injected server-side** by `src/utils/renderLoading.js` using `JSON.stringify`, so it is never read from a client-supplied query parameter. This eliminates open-redirect and XSS risk from the loading screen.
 
 ---
 

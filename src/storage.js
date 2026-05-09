@@ -27,7 +27,12 @@ function read(file) {
   if (!fs.existsSync(file)) return {};
   try {
     return JSON.parse(fs.readFileSync(file, 'utf8'));
-  } catch {
+  } catch (err) {
+    // Treat an unreadable or malformed file as an empty store.
+    // Log so developers can spot corrupted data during debugging.
+    if (err.code !== 'ENOENT') {
+      console.warn(`[storage] Could not parse "${file}":`, err.message);
+    }
     return {};
   }
 }

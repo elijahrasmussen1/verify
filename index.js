@@ -15,9 +15,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Fail fast if SESSION_SECRET is not configured in production.
+if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+  console.error('FATAL: SESSION_SECRET environment variable is not set. Refusing to start in production without a secure session secret.');
+  process.exit(1);
+}
+
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'aquaforge-dev-secret',
+    secret: process.env.SESSION_SECRET || 'aquaforge-dev-secret-do-not-use-in-production',
     resave: false,
     saveUninitialized: false,
     cookie: {
