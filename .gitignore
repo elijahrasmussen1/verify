@@ -1,0 +1,12 @@
+# dependencies
+node_modules/
+
+# environment variables — never commit real secrets
+.env
+
+# JSON user/session storage — contains user tokens
+data/*.json
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
