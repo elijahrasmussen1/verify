@@ -21,7 +21,9 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false, // set to true when serving over HTTPS in production
+      // Enable the Secure flag automatically in production (HTTPS required).
+      // For local development leave it off so http://localhost still works.
+      secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
       maxAge: 1000 * 60 * 15, // 15 minutes
     },

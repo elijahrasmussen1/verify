@@ -76,12 +76,14 @@ router.get('/callback', async (req, res) => {
       accessToken = refreshed.access_token;
     }
 
-    // Push metadata to Discord — this is what triggers the Linked Role check
+    // Push metadata to Discord — this is what triggers the Linked Role check.
+    // Discord's BOOLEAN_EQUAL type expects the string "1" for true.
+    const DISCORD_BOOLEAN_TRUE = '1';
     await updateRoleConnection(
       accessToken,
-      'Roblox',           // platform_name (shown in Discord profile)
-      robloxUsername,     // platform_username
-      { verified: '1' }  // "1" == true for BOOLEAN_EQUAL metadata type
+      'Roblox',              // platform_name (shown in Discord profile)
+      robloxUsername,        // platform_username
+      { verified: DISCORD_BOOLEAN_TRUE }
     );
 
     res.redirect('/success.html');

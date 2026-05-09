@@ -289,10 +289,28 @@
 
   <script>
     // ── Redirect target ──────────────────────────────────────────────────────
-    // This variable is populated from the query string so the server never
-    // has to hard-code URLs into this template.
+    // NEXT_URL is read from the query string set by the Express server.
+    // We validate it against a strict allowlist so no attacker-controlled
+    // value can redirect users to an arbitrary third-party URL.
+    const ALLOWED_HOSTS = ['discord.com', 'apis.roblox.com'];
+
+    function isSafeRedirect(url) {
+      if (!url) return false;
+      // Relative paths on the same origin are always safe
+      if (/^\/[^/]/.test(url) || url === '/') return true;
+      try {
+        const parsed = new URL(url);
+        if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false;
+        return ALLOWED_HOSTS.some(
+          (h) => parsed.hostname === h || parsed.hostname.endsWith('.' + h)
+        );
+      } catch {
+        return false;
+      }
+    }
+
     const params   = new URLSearchParams(window.location.search);
-    const NEXT_URL = params.get('next') || '/';
+    const NEXT_URL = isSafeRedirect(params.get('next')) ? params.get('next') : '/';
     const flowType = params.get('type') || 'discord';
 
     // ── Status text ──────────────────────────────────────────────────────────
