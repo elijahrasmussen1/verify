@@ -1,7 +1,7 @@
 {
   "name": "aquaforge-verify",
   "version": "1.0.0",
-  "description": "Discord Linked Roles verification bridge for Roblox — Survive Water for Brainrots",
+  "description": "Discord Linked Roles verification bridge for Roblox — Survive Floods for Brainrots",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

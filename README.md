@@ -1,6 +1,6 @@
 # AquaForge Verify
 
-Discord **Linked Roles** verification bridge for **Roblox** — built for *Survive Water for Brainrots*.
+Discord **Linked Roles** verification bridge for **Roblox** — built for *Survive Floods for Brainrots*.
 
 Users connect their Roblox account to Discord. The backend verifies the link and pushes metadata to Discord, which then automatically grants a **Linked Role** to verified members — no slash commands involved.
 
