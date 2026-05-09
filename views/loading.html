@@ -288,30 +288,12 @@
   </div>
 
   <script>
-    // ── Redirect target ──────────────────────────────────────────────────────
-    // NEXT_URL is read from the query string set by the Express server.
-    // We validate it against a strict allowlist so no attacker-controlled
-    // value can redirect users to an arbitrary third-party URL.
-    const ALLOWED_HOSTS = ['discord.com', 'apis.roblox.com'];
-
-    function isSafeRedirect(url) {
-      if (!url) return false;
-      // Relative paths on the same origin are always safe
-      if (/^\/[^/]/.test(url) || url === '/') return true;
-      try {
-        const parsed = new URL(url);
-        if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false;
-        return ALLOWED_HOSTS.some(
-          (h) => parsed.hostname === h || parsed.hostname.endsWith('.' + h)
-        );
-      } catch {
-        return false;
-      }
-    }
-
-    const params   = new URLSearchParams(window.location.search);
-    const NEXT_URL = isSafeRedirect(params.get('next')) ? params.get('next') : '/';
-    const flowType = params.get('type') || 'discord';
+    // ── Server-injected values ────────────────────────────────────────────────
+    // NEXT_URL and flowType are set by the Express server before this page is
+    // sent to the browser.  They are never read from the query string so no
+    // client-supplied value can influence the redirect target.
+    const NEXT_URL  = __NEXT_URL__;   // replaced server-side via renderLoading()
+    const flowType  = __FLOW_TYPE__;  // replaced server-side via renderLoading()
 
     // ── Status text ──────────────────────────────────────────────────────────
     const statusEl = document.getElementById('js-status');

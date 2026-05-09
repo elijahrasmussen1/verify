@@ -12,6 +12,7 @@ const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const { getDiscordTokens, getDiscordUser } = require('../utils/discord');
 const { saveUser, saveState } = require('../storage');
+const { renderLoading } = require('../utils/renderLoading');
 
 const router = express.Router();
 
@@ -30,8 +31,9 @@ router.get('/verify', (req, res) => {
 
   const discordAuthUrl = `https://discord.com/api/oauth2/authorize?${params}`;
 
-  // Show animated loading screen, then forward to Discord
-  res.redirect(`/loading.html?next=${encodeURIComponent(discordAuthUrl)}&type=discord`);
+  // Render loading screen with the Discord OAuth URL baked in server-side.
+  // The URL is never read from a client-supplied query parameter.
+  res.send(renderLoading(discordAuthUrl, 'discord'));
 });
 
 // ── Step 2: Discord OAuth callback ────────────────────────────────────────────
@@ -77,8 +79,8 @@ router.get('/callback', async (req, res) => {
 
     const robloxAuthUrl = `https://apis.roblox.com/oauth/v1/authorize?${robloxParams}`;
 
-    // Show loading screen again while we transition to Roblox OAuth
-    res.redirect(`/loading.html?next=${encodeURIComponent(robloxAuthUrl)}&type=roblox`);
+    // Render loading screen with the Roblox OAuth URL baked in server-side.
+    res.send(renderLoading(robloxAuthUrl, 'roblox'));
   } catch (err) {
     console.error('[discord/callback]', err?.response?.data ?? err.message);
     res.redirect('/error.html?message=Failed+to+authenticate+with+Discord');
