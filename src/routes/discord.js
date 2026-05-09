@@ -17,17 +17,17 @@
  * Roblox verification succeeds in /roblox/callback.
  */
 
+const crypto = require('crypto');
 const express = require('express');
-const { v4: uuidv4 } = require('uuid');
 const { getDiscordTokens, getDiscordUser } = require('../utils/discord');
-const { saveState } = require('../storage');
+const { saveState, getState, deleteState } = require('../storage');
 const { renderLoading } = require('../utils/renderLoading');
 
 const router = express.Router();
 
 // ── Step 1: Start Discord OAuth ───────────────────────────────────────────────
 router.get('/verify', (req, res) => {
-  const state = uuidv4();
+  const state = crypto.randomUUID();
   saveState(state, { type: 'discord_oauth' });
 
   const params = new URLSearchParams({
@@ -59,6 +59,13 @@ router.get('/callback', async (req, res) => {
     return res.redirect('/error.html?message=Missing+callback+parameters');
   }
 
+  // Validate and consume the Discord CSRF state token (single-use).
+  const discordStateData = getState(state);
+  if (!discordStateData || discordStateData.type !== 'discord_oauth') {
+    return res.redirect('/error.html?message=Invalid+or+expired+session.+Please+start+over.');
+  }
+  deleteState(state);
+
   try {
     // Exchange the one-time code for a long-lived access + refresh token pair
     const tokens = await getDiscordTokens(code, process.env.DISCORD_REDIRECT_URI);
@@ -75,7 +82,7 @@ router.get('/callback', async (req, res) => {
     // Carry the tokens and email forward in the Roblox state entry.
     // Nothing is written to users.json yet — email is only stored once
     // Roblox verification succeeds in /roblox/callback.
-    const robloxState = uuidv4();
+    const robloxState = crypto.randomUUID();
     saveState(robloxState, {
       type: 'roblox_oauth',
       discordId: discordUser.id,
