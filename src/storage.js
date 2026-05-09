@@ -6,6 +6,26 @@
  * │  data/states.json  – keyed by random state string       │
  * └─────────────────────────────────────────────────────────┘
  *
+ * Verified user record shape (data/users.json):
+ * {
+ *   "discordId":    "123456789012345678",
+ *   "discordEmail": "user@example.com",
+ *   "robloxUserId": "7654321",
+ *   "robloxUsername": "elijxhraz",
+ *   "verifiedAt":   "2026-05-09T03:00:00.000Z",
+ *   "alts": []          ← populated by staff via addAlt(), never auto-detected
+ * }
+ *
+ * Alt-account entry shape (element of the alts array):
+ * {
+ *   "robloxUserId":   "789",
+ *   "robloxUsername": "AltAccountName",
+ *   "reason":   "Confirmed alt after ban evasion investigation",
+ *   "addedBy":  "moderatorDiscordId",
+ *   "addedAt":  "2026-05-09T03:30:00.000Z",
+ *   "evidence": "Optional notes or case ID"
+ * }
+ *
  * For production consider encrypting the token values at rest.
  */
 
@@ -115,4 +135,40 @@ function deleteState(state) {
   write(STATES_FILE, states);
 }
 
-module.exports = { getUser, saveUser, saveState, getState, deleteState };
+// ── Alt-account documentation (staff only) ────────────────────────────────────
+
+/**
+ * Append a documented alt-account entry to an existing user record.
+ *
+ * This function is intended for staff tooling only.  Alt accounts are NEVER
+ * auto-detected or added automatically — only call this after a human review.
+ *
+ * @param {string} discordId  The primary account's Discord ID
+ * @param {object} altData    Fields to record:
+ *   {
+ *     robloxUserId:   string,  // Roblox user ID of the alt
+ *     robloxUsername: string,  // Roblox username of the alt
+ *     reason:         string,  // Why this alt was documented
+ *     addedBy:        string,  // Discord ID of the staff member adding the entry
+ *     addedAt?:       string,  // ISO timestamp — defaults to now if omitted
+ *     evidence?:      string,  // Optional notes or case ID
+ *   }
+ */
+function addAlt(discordId, altData) {
+  const users = read(USERS_FILE);
+  if (!users[discordId]) {
+    throw new Error(`[storage] User ${discordId} not found — cannot add alt`);
+  }
+  if (!Array.isArray(users[discordId].alts)) {
+    users[discordId].alts = [];
+  }
+  users[discordId].alts.push({
+    ...altData,
+    addedAt: altData.addedAt ?? new Date().toISOString(),
+  });
+  users[discordId].updatedAt = new Date().toISOString();
+  write(USERS_FILE, users);
+  return users[discordId];
+}
+
+module.exports = { getUser, saveUser, addAlt, saveState, getState, deleteState };

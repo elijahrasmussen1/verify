@@ -6,12 +6,21 @@
  *
  * After a successful Discord auth we redirect the user through the loading
  * screen and then on to Roblox OAuth.
+ *
+ * Scopes requested: identify email role_connections.write
+ *   - identify           : read the user's ID and username
+ *   - email              : read the user's verified email address (required)
+ *   - role_connections.write : push metadata for the Linked Role check
+ *
+ * The Discord access/refresh tokens and email are carried forward in the
+ * short-lived Roblox state entry and are NOT written to users.json until
+ * Roblox verification succeeds in /roblox/callback.
  */
 
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const { getDiscordTokens, getDiscordUser } = require('../utils/discord');
-const { saveUser, saveState } = require('../storage');
+const { saveState } = require('../storage');
 const { renderLoading } = require('../utils/renderLoading');
 
 const router = express.Router();
@@ -25,7 +34,7 @@ router.get('/verify', (req, res) => {
     client_id: process.env.DISCORD_CLIENT_ID,
     redirect_uri: process.env.DISCORD_REDIRECT_URI,
     response_type: 'code',
-    scope: 'identify role_connections.write',
+    scope: 'identify email role_connections.write',
     state,
   });
 
@@ -55,19 +64,27 @@ router.get('/callback', async (req, res) => {
     const tokens = await getDiscordTokens(code, process.env.DISCORD_REDIRECT_URI);
     const discordUser = await getDiscordUser(tokens.access_token);
 
-    // Persist the Discord token set keyed by user ID
-    saveUser(discordUser.id, {
-      discordUsername: discordUser.username,
-      discordAvatar: discordUser.avatar,
+    // A verified email address is required — reject unverified or missing emails.
+    // discordUser.verified is a boolean from Discord's API; check strictly.
+    if (!discordUser.email || discordUser.verified !== true) {
+      return res.redirect(
+        `/error.html?message=${encodeURIComponent('A verified Discord email address is required to complete verification.')}`
+      );
+    }
+
+    // Carry the tokens and email forward in the Roblox state entry.
+    // Nothing is written to users.json yet — email is only stored once
+    // Roblox verification succeeds in /roblox/callback.
+    const robloxState = uuidv4();
+    saveState(robloxState, {
+      type: 'roblox_oauth',
+      discordId: discordUser.id,
+      discordEmail: discordUser.email,
       discordAccessToken: tokens.access_token,
       discordRefreshToken: tokens.refresh_token,
       // Store as an absolute timestamp so we can check expiry later
       discordTokenExpiry: Date.now() + tokens.expires_in * 1000,
     });
-
-    // Generate a fresh state for the Roblox OAuth leg, carrying the Discord ID forward
-    const robloxState = uuidv4();
-    saveState(robloxState, { type: 'roblox_oauth', discordId: discordUser.id });
 
     const robloxParams = new URLSearchParams({
       client_id: process.env.ROBLOX_CLIENT_ID,

@@ -7,6 +7,10 @@
  * This is the final step of the Linked Roles flow.  After this handler
  * completes Discord will automatically evaluate the metadata and grant (or
  * deny) any Linked Role whose requirements match.
+ *
+ * The Discord tokens and email address are read from the short-lived state
+ * entry created in /discord/callback.  The Roblox access token is used once
+ * to fetch identity via /userinfo and is never stored.
  */
 
 const express = require('express');
@@ -15,6 +19,9 @@ const { updateRoleConnection, refreshDiscordToken } = require('../utils/discord'
 const { getState, deleteState, getUser, saveUser } = require('../storage');
 
 const router = express.Router();
+
+// Refresh the Discord token if it expires within this many milliseconds.
+const TOKEN_REFRESH_BUFFER_MS = 60_000;
 
 // ── Step 3: Roblox OAuth callback → update Discord metadata ──────────────────
 router.get('/callback', async (req, res) => {
@@ -36,43 +43,30 @@ router.get('/callback', async (req, res) => {
     return res.redirect('/error.html?message=Invalid+or+expired+session.+Please+start+over.');
   }
 
-  const { discordId } = stateData;
+  const {
+    discordId,
+    discordEmail,
+    discordAccessToken,
+    discordRefreshToken,
+    discordTokenExpiry,
+  } = stateData;
   deleteState(state); // single-use
 
   try {
-    // Exchange the Roblox code for tokens
+    // Exchange the Roblox code for tokens.
+    // The access token is used only for the /userinfo call below and is not stored.
     const robloxTokens = await getRobloxTokens(code, process.env.ROBLOX_REDIRECT_URI);
     const robloxUser = await getRobloxUser(robloxTokens.access_token);
+    // robloxTokens.access_token is intentionally discarded after this point.
 
     // Resolve username — Roblox returns these fields via OIDC userinfo
     const robloxUsername = robloxUser.preferred_username ?? robloxUser.name ?? 'Unknown';
 
-    // Persist Roblox identity alongside the existing Discord record
-    saveUser(discordId, {
-      robloxId: robloxUser.sub,
-      robloxUsername,
-      robloxDisplayName: robloxUser.name ?? robloxUsername,
-      verifiedAt: new Date().toISOString(),
-    });
-
-    // Retrieve stored Discord tokens, refreshing if necessary
-    let userData = getUser(discordId);
-    if (!userData?.discordAccessToken) {
-      return res.redirect(
-        '/error.html?message=Discord+session+expired.+Please+start+over.'
-      );
-    }
-
-    let accessToken = userData.discordAccessToken;
-
-    // Proactively refresh if the token expires within the next 60 seconds
-    if (Date.now() >= userData.discordTokenExpiry - 60_000) {
-      const refreshed = await refreshDiscordToken(userData.discordRefreshToken);
-      saveUser(discordId, {
-        discordAccessToken: refreshed.access_token,
-        discordRefreshToken: refreshed.refresh_token,
-        discordTokenExpiry: Date.now() + refreshed.expires_in * 1000,
-      });
+    // Resolve the Discord access token, refreshing silently if it is about to expire.
+    // Refreshed tokens are kept in local scope only — not written to storage.
+    let accessToken = discordAccessToken;
+    if (Date.now() >= discordTokenExpiry - TOKEN_REFRESH_BUFFER_MS) {
+      const refreshed = await refreshDiscordToken(discordRefreshToken);
       accessToken = refreshed.access_token;
     }
 
@@ -81,10 +75,22 @@ router.get('/callback', async (req, res) => {
     const DISCORD_BOOLEAN_TRUE = '1';
     await updateRoleConnection(
       accessToken,
-      'Roblox',              // platform_name (shown in Discord profile)
-      robloxUsername,        // platform_username
+      'Roblox',       // platform_name (shown in Discord profile)
+      robloxUsername, // platform_username
       { verified: DISCORD_BOOLEAN_TRUE }
     );
+
+    // Persist the final verified record.  Email and Roblox identity are written
+    // only after the role-connection push succeeds.  Existing alts are preserved
+    // so that re-verification does not clear staff documentation.
+    const existing = getUser(discordId);
+    saveUser(discordId, {
+      discordEmail,
+      robloxUserId: robloxUser.sub,
+      robloxUsername,
+      verifiedAt: new Date().toISOString(),
+      alts: existing?.alts ?? [],
+    });
 
     res.redirect('/success.html');
   } catch (err) {
