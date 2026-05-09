@@ -5,7 +5,7 @@
  *   POST https://apis.roblox.com/oauth/v1/token     – exchange code for tokens
  *   GET  https://apis.roblox.com/oauth/v1/userinfo  – fetch user profile
  *
- * Scopes requested: openid profile
+ * Scopes requested: profile
  *
  * Useful fields returned by /userinfo:
  *   sub                – Roblox user ID (string)

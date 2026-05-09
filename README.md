@@ -20,7 +20,7 @@ User
  │       Store Discord tokens keyed by Discord user ID
  │       Generate Roblox OAuth state (carrying Discord ID)
  │       Redirect through loading screen
- │       → Roblox OAuth2 (scopes: openid + profile)
+ │       → Roblox OAuth2 (scopes: profile)
  │
  ├─3─► GET /roblox/callback  (Roblox redirects here)
  │       Validate state → recover Discord user ID
@@ -153,7 +153,7 @@ In the [Roblox Creator Dashboard](https://create.roblox.com/dashboard/credential
 
 1. Create a new OAuth 2.0 application.
 2. Add `http://localhost:3000/roblox/callback` (or your ngrok URL) as an allowed redirect URI.
-3. Enable scopes: `openid`, `profile`.
+3. Enable scope: `profile`.
 4. Copy the Client ID and Secret into `.env`.
 
 ### 7. Start the server
