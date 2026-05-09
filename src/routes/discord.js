@@ -97,7 +97,7 @@ router.get('/callback', async (req, res) => {
       client_id: process.env.ROBLOX_CLIENT_ID,
       redirect_uri: process.env.ROBLOX_REDIRECT_URI,
       response_type: 'code',
-      scope: 'profile',
+      scope: 'openid profile',
       state: robloxState,
     });
 
