@@ -186,36 +186,36 @@
       text-align: center;
     }
 
-    /* Characters art */
-    .hero-characters {
+    /* ── Hero stage: characters + logo as one overlapping unit ── */
+    .hero-stage {
       position: relative;
-      width: min(660px, 90vw);
-      margin-bottom: -40px; /* let logo overlap the bottom edge */
+      width: min(680px, 92vw);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 14px;
     }
 
-    .hero-characters img {
+    .stage-characters {
       width: 100%;
       height: auto;
       display: block;
-      /* soft fade at the bottom so logo sits on top seamlessly */
-      -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
-      mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
-      filter: drop-shadow(0 0 60px rgba(20, 180, 20, 0.18));
+      position: relative;
+      z-index: 1;
+      /* Green halo glow to help the characters melt into the background */
+      filter: drop-shadow(0 0 90px rgba(20, 160, 20, 0.35))
+              drop-shadow(0 0 30px rgba(10, 100, 10, 0.4));
     }
 
-    /* Game logo */
-    .hero-logo {
+    .stage-logo {
       position: relative;
       z-index: 2;
-      width: min(420px, 78vw);
-      margin-bottom: 18px;
-    }
-
-    .hero-logo img {
-      width: 100%;
-      height: auto;
-      display: block;
-      filter: drop-shadow(0 4px 32px rgba(0,0,0,0.7));
+      width: min(430px, 72%);
+      /* Pull the logo up ~36% of the stage width — sits deep inside the characters */
+      margin-top: -36%;
+      margin-bottom: 0;
+      filter: drop-shadow(0 6px 40px rgba(0, 0, 0, 0.9))
+              drop-shadow(0 0 20px rgba(0, 0, 0, 0.6));
     }
 
     /* Title + subtitle */
@@ -389,14 +389,12 @@
   <!-- ── Hero ───────────────────────────────────────────────────────────── -->
   <main class="hero">
 
-    <!-- Place characters.png in public/images/ -->
-    <div class="hero-characters">
-      <img src="/images/characters.png" alt="" aria-hidden="true" />
-    </div>
-
-    <!-- Place pokecolo.png in public/images/ -->
-    <div class="hero-logo">
-      <img src="/images/pokecolo.png" alt="PokeColo" />
+    <!-- Single stage: characters behind, logo overlapping from below -->
+    <div class="hero-stage">
+      <!-- Place characters.png in public/images/ -->
+      <img class="stage-characters" src="/images/characters.png" alt="" aria-hidden="true" />
+      <!-- Place pokecolo.png in public/images/ -->
+      <img class="stage-logo" src="/images/pokecolo.png" alt="PokeColo" />
     </div>
 
     <h1 class="hero-title">PokeColo</h1>
