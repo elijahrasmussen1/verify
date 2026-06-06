@@ -32,7 +32,7 @@ router.get('/', (req, res) => {
   const state = crypto.randomUUID();
   saveState(state, { type: 'spawner_oauth' });
 
-  const redirectUri = `${process.env.BASE_URL}/spawner/callback`;
+  const redirectUri = `${(process.env.BASE_URL || '').replace(/\/$/, '')}/spawner/callback`;
 
   const params = new URLSearchParams({
     client_id:     process.env.DISCORD_CLIENT_ID,
@@ -65,7 +65,7 @@ router.get('/callback', async (req, res) => {
   deleteState(state);
 
   try {
-    const redirectUri = `${process.env.BASE_URL}/spawner/callback`;
+    const redirectUri = `${(process.env.BASE_URL || '').replace(/\/$/, '')}/spawner/callback`;
     const tokens      = await getDiscordTokens(code, redirectUri);
     const user        = await getDiscordUser(tokens.access_token);
 
