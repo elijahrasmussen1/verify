@@ -40,10 +40,7 @@ app.use(
 app.use('/discord', discordRoutes);
 app.use('/roblox', robloxRoutes);
 
-// Entry point — immediately start the Discord OAuth flow (loading screen → Discord auth).
-app.get('/', (_req, res) => {
-  res.redirect('/discord/verify');
-});
+// Landing page is served automatically by express.static (public/index.html).
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
