@@ -3,314 +3,38 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AquaForge — Verifying</title>
+  <title>Loading</title>
   <style>
-    /* ── Reset ─────────────────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
       height: 100%;
       overflow: hidden;
-      background: #07111e;
-      color: #e0eaf5;
-      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    /* ── Ambient glow ─────────────────────────────────────────────────────── */
-    .glow {
-      position: fixed;
-      top: 38%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 520px;
-      height: 520px;
-      border-radius: 50%;
-      background: radial-gradient(
-        circle,
-        rgba(18, 95, 160, 0.07) 0%,
-        transparent 70%
-      );
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    /* ── Layout ───────────────────────────────────────────────────────────── */
-    .page {
-      position: relative;
-      z-index: 1;
-      height: 100vh;
+      background: #000;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 30px;
-      padding-bottom: 100px; /* leave room for wave */
     }
 
-    /* ── Brand ────────────────────────────────────────────────────────────── */
-    .brand {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .brand-name {
-      font-size: 28px;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      color: #d6e8f8;
-    }
-
-    .brand-sub {
-      font-size: 11.5px;
-      color: #4a7f9c;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      font-weight: 500;
-    }
-
-    /* ── Ripple spinner ───────────────────────────────────────────────────── */
     .spinner {
-      position: relative;
-      width: 60px;
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .ring {
-      position: absolute;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
-      border: 1.5px solid transparent;
-      animation: ring-pulse 2.4s ease-out infinite;
+      border: 3px solid rgba(255, 255, 255, 0.15);
+      border-top-color: #fff;
+      animation: spin 0.7s linear infinite;
     }
 
-    .ring:nth-child(1) {
-      width: 60px;
-      height: 60px;
-      border-color: rgba(44, 148, 220, 0.45);
-      animation-delay: 0s;
-    }
-
-    .ring:nth-child(2) {
-      width: 44px;
-      height: 44px;
-      border-color: rgba(44, 148, 220, 0.35);
-      animation-delay: 0.5s;
-    }
-
-    .ring:nth-child(3) {
-      width: 28px;
-      height: 28px;
-      border-color: rgba(44, 148, 220, 0.25);
-      animation-delay: 1s;
-    }
-
-    @keyframes ring-pulse {
-      0%   { transform: scale(0.6);  opacity: 1; }
-      100% { transform: scale(1.55); opacity: 0; }
-    }
-
-    .dot {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: #2c94dc;
-      box-shadow: 0 0 14px rgba(44, 148, 220, 0.9);
-      animation: dot-breathe 1.9s ease-in-out infinite;
-    }
-
-    @keyframes dot-breathe {
-      0%, 100% { transform: scale(1);   opacity: 1;   }
-      50%      { transform: scale(1.35); opacity: 0.65; }
-    }
-
-    /* ── Status line ──────────────────────────────────────────────────────── */
-    .status {
-      font-size: 14px;
-      color: #6aaed0;
-      letter-spacing: 0.025em;
-      min-height: 20px;
-      transition: opacity 0.4s ease;
-    }
-
-    /* ── Tip carousel ─────────────────────────────────────────────────────── */
-    .tip-track {
-      position: relative;
-      height: 18px;
-      width: min(460px, 88vw);
-      overflow: hidden;
-      text-align: center;
-    }
-
-    .tip {
-      position: absolute;
-      inset: 0;
-      font-size: 11.5px;
-      color: #2f5a72;
-      letter-spacing: 0.04em;
-      opacity: 0;
-      transform: translateY(10px);
-      transition: opacity 0.45s ease, transform 0.45s ease;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .tip.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .tip.leaving {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-
-    /* ── Wave layer ───────────────────────────────────────────────────────── */
-    .waves {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 130px;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .wave {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 200%;
-      height: 100%;
-    }
-
-    /* Each wave is an inline SVG animated left at different speeds */
-    .wave svg {
-      width: 50%; /* half of the .wave element = 100% viewport */
-      height: 100%;
-      display: inline-block;
-      vertical-align: bottom;
-    }
-
-    .wave-1 { animation: wave-drift 9s linear infinite;   opacity: 0.18; }
-    .wave-2 { animation: wave-drift 14s linear infinite reverse; opacity: 0.11; top: 12px; }
-    .wave-3 { animation: wave-drift 19s linear infinite;  opacity: 0.07; top: 24px; }
-
-    @keyframes wave-drift {
-      from { transform: translateX(0);    }
-      to   { transform: translateX(-50%); }
-    }
-
-    /* ── Responsive tweak ─────────────────────────────────────────────────── */
-    @media (max-width: 480px) {
-      .brand-name { font-size: 19px; }
-      .glow { width: 280px; height: 280px; }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
   </style>
 </head>
 <body>
-
-  <div class="glow"></div>
-
-  <div class="page">
-    <div class="brand">
-      <div class="brand-name">AquaForge</div>
-      <div class="brand-sub">Survive Floods for Brainrots</div>
-    </div>
-
-    <div class="spinner">
-      <div class="ring"></div>
-      <div class="ring"></div>
-      <div class="ring"></div>
-      <div class="dot"></div>
-    </div>
-
-    <div class="status" id="js-status">Preparing secure connection…</div>
-
-    <div class="tip-track">
-      <span class="tip visible" id="tip-0">Staff will never ask for your password or personal information.</span>
-      <span class="tip"         id="tip-1">Verifying that you're skibidi…</span>
-      <span class="tip"         id="tip-2">Always use unique passwords!</span>
-    </div>
-  </div>
-
-  <!-- Water waves — three SVG layers, each a seamlessly tiling sine path -->
-  <div class="waves">
-
-    <div class="wave wave-1">
-      <svg viewBox="0 0 1440 130" preserveAspectRatio="none">
-        <path fill="#1a7bbf"
-          d="M0,70 C240,30 480,110 720,70 C960,30 1200,110 1440,70 L1440,130 L0,130 Z"/>
-      </svg><svg viewBox="0 0 1440 130" preserveAspectRatio="none">
-        <path fill="#1a7bbf"
-          d="M0,70 C240,30 480,110 720,70 C960,30 1200,110 1440,70 L1440,130 L0,130 Z"/>
-      </svg>
-    </div>
-
-    <div class="wave wave-2">
-      <svg viewBox="0 0 1440 130" preserveAspectRatio="none">
-        <path fill="#2496d4"
-          d="M0,80 C180,40 360,115 540,80 C720,45 900,115 1080,80 C1260,45 1350,90 1440,80 L1440,130 L0,130 Z"/>
-      </svg><svg viewBox="0 0 1440 130" preserveAspectRatio="none">
-        <path fill="#2496d4"
-          d="M0,80 C180,40 360,115 540,80 C720,45 900,115 1080,80 C1260,45 1350,90 1440,80 L1440,130 L0,130 Z"/>
-      </svg>
-    </div>
-
-    <div class="wave wave-3">
-      <svg viewBox="0 0 1440 130" preserveAspectRatio="none">
-        <path fill="#30a8e0"
-          d="M0,90 C300,55 600,120 900,90 C1100,68 1280,105 1440,90 L1440,130 L0,130 Z"/>
-      </svg><svg viewBox="0 0 1440 130" preserveAspectRatio="none">
-        <path fill="#30a8e0"
-          d="M0,90 C300,55 600,120 900,90 C1100,68 1280,105 1440,90 L1440,130 L0,130 Z"/>
-      </svg>
-    </div>
-
-  </div>
-
+  <div class="spinner"></div>
   <script>
-    // ── Server-injected values ────────────────────────────────────────────────
-    // NEXT_URL and flowType are set by the Express server before this page is
-    // sent to the browser.  They are never read from the query string so no
-    // client-supplied value can influence the redirect target.
-    const NEXT_URL  = __NEXT_URL__;   // replaced server-side via renderLoading()
-    const flowType  = __FLOW_TYPE__;  // replaced server-side via renderLoading()
-
-    // ── Status text ──────────────────────────────────────────────────────────
-    const statusEl = document.getElementById('js-status');
-    statusEl.textContent =
-      flowType === 'roblox'
-        ? 'Discord linked — connecting Roblox…'
-        : 'Connecting to Discord…';
-
-    // ── Tip rotation ─────────────────────────────────────────────────────────
-    const tips     = Array.from(document.querySelectorAll('.tip'));
-    let   current  = 0;
-
-    function rotateTips() {
-      const prev = tips[current];
-      prev.classList.remove('visible');
-      prev.classList.add('leaving');
-
-      current = (current + 1) % tips.length;
-      tips[current].classList.add('visible');
-
-      setTimeout(() => prev.classList.remove('leaving'), 500);
-    }
-
-    const tipTimer = setInterval(rotateTips, 2600);
-
-    // ── Auto-redirect ────────────────────────────────────────────────────────
-    setTimeout(() => {
-      clearInterval(tipTimer);
-      window.location.href = NEXT_URL;
-    }, 2400);
+    const NEXT_URL = __NEXT_URL__;
+    setTimeout(() => { window.location.href = NEXT_URL; }, 100);
   </script>
 </body>
 </html>

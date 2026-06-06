@@ -1,15 +1,15 @@
 /**
- * Renders the loading/redirect screen with server-controlled values baked in.
+ * Renders the loading/redirect screen with a server-controlled redirect URL baked in.
  *
- * The template uses placeholder tokens (__NEXT_URL__ and __FLOW_TYPE__) that
- * are replaced here before the HTML is sent to the browser.  This means the
- * redirect target is NEVER read from a client-supplied query parameter —
- * eliminating open-redirect and XSS vectors entirely.
+ * The template uses the placeholder token __NEXT_URL__ which is replaced here
+ * before the HTML is sent to the browser.  This means the redirect target is
+ * NEVER read from a client-supplied query parameter — eliminating open-redirect
+ * and XSS vectors entirely.
  *
- * @param {string} nextUrl  The URL to redirect to after the loading animation.
+ * @param {string} nextUrl  The URL to redirect to.
  *                          Must be a server-constructed value (Discord or Roblox OAuth URL,
  *                          or a same-origin path).
- * @param {'discord'|'roblox'} type  Controls the status message shown.
+ * @param {'discord'|'roblox'} _type  Unused — kept for call-site compatibility.
  * @returns {string} Full HTML page ready to send via res.send()
  */
 
@@ -28,12 +28,11 @@ try {
   );
 }
 
-function renderLoading(nextUrl, type) {
+function renderLoading(nextUrl, _type) {
   // JSON.stringify safely escapes all characters that could break out of a JS
   // string literal (quotes, backslashes, control characters, etc.).
   return TEMPLATE
-    .replace('__NEXT_URL__',  JSON.stringify(nextUrl))
-    .replace('__FLOW_TYPE__', JSON.stringify(type));
+    .replace('__NEXT_URL__', JSON.stringify(nextUrl));
 }
 
 module.exports = { renderLoading };
