@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spawner</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      min-height: 100%;
+      background: #111;
+      color: #d4d4d4;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px 16px 120px;
+    }
+
+    /* ── Field card ── */
+    .field {
+      background: #1e1e1e;
+      border: 1px solid #2a2a2a;
+      border-radius: 6px;
+      padding: 10px 14px;
+      cursor: text;
+    }
+
+    .field label {
+      display: block;
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 4px;
+    }
+
+    .field label .req { color: #e05252; }
+
+    .field input,
+    .field textarea {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #ccc;
+      font-size: 14px;
+      font-family: inherit;
+      resize: none;
+    }
+
+    .field input::placeholder,
+    .field textarea::placeholder { color: #555; }
+
+    /* ── Grid rows ── */
+    .row {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .row-2 { grid-template-columns: 1fr 1fr; }
+    .row-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .row-6 { grid-template-columns: repeat(6, 1fr); }
+
+    /* ── Checkboxes ── */
+    .checks {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      margin: 12px 0;
+    }
+
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      user-select: none;
+      color: #bbb;
+      font-size: 14px;
+    }
+
+    .check-item input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border: 1px solid #555;
+      border-radius: 3px;
+      background: #1e1e1e;
+      flex-shrink: 0;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .check-item input[type="checkbox"]:checked {
+      background: #22c55e;
+      border-color: #22c55e;
+    }
+
+    .check-item input[type="checkbox"]:checked::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 5px;
+      width: 5px;
+      height: 8px;
+      border: 2px solid #fff;
+      border-top: none;
+      border-left: none;
+      transform: rotate(45deg);
+    }
+
+    /* ── Section label ── */
+    .section-label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 6px;
+      margin-top: 4px;
+    }
+
+    /* ── Stat cell (IVs / EVs) ── */
+    .stat-cell {
+      background: #1e1e1e;
+      border: 1px solid #2a2a2a;
+      border-radius: 6px;
+      padding: 10px 14px;
+    }
+
+    .stat-cell .stat-label {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .stat-cell input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #ccc;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .stat-cell input::placeholder { color: #444; }
+
+    /* ── Stats wrapper ── */
+    .stats-wrapper {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+
+    .stats-block {}
+
+    /* ── Moves textarea ── */
+    .moves-field {
+      background: #1e1e1e;
+      border: 1px solid #2a2a2a;
+      border-radius: 6px;
+      padding: 10px 14px;
+    }
+
+    .moves-field label {
+      display: block;
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 6px;
+    }
+
+    .moves-field textarea {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #ccc;
+      font-size: 14px;
+      font-family: inherit;
+      resize: none;
+      height: 90px;
+      line-height: 1.5;
+    }
+
+    .moves-field textarea::placeholder { color: #555; }
+
+    /* ── Submit button ── */
+    .spawn-btn {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #22c55e;
+      border: none;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+      padding: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background .15s;
+    }
+
+    .spawn-btn:hover { background: #16a34a; }
+
+    .spawn-icon { font-size: 16px; }
+
+    @media (max-width: 600px) {
+      .row-6  { grid-template-columns: repeat(3, 1fr); }
+      .stats-wrapper { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- Row 1: Species + Forme -->
+    <div class="row row-2" style="margin-bottom:8px">
+      <div class="field">
+        <label>Species <span class="req">*</span></label>
+        <input type="text" id="species" placeholder="Pikachu" />
+      </div>
+      <div class="field">
+        <label>Forme</label>
+        <input type="text" id="forme" placeholder="e.g. Wash" />
+      </div>
+    </div>
+
+    <!-- Row 2: Nickname + Level -->
+    <div class="row row-2">
+      <div class="field">
+        <label>Nickname</label>
+        <input type="text" id="nickname" placeholder="Nickname" />
+      </div>
+      <div class="field">
+        <label>Level</label>
+        <input type="number" id="level" placeholder="50" min="1" max="100" />
+      </div>
+    </div>
+
+    <!-- Row 3: Item + Nature -->
+    <div class="row row-2">
+      <div class="field">
+        <label>Item</label>
+        <input type="text" id="item" placeholder="Leftovers" />
+      </div>
+      <div class="field">
+        <label>Nature</label>
+        <input type="text" id="nature" placeholder="Adamant" />
+      </div>
+    </div>
+
+    <!-- Row 4: Ability + Pokeball -->
+    <div class="row row-2">
+      <div class="field">
+        <label>Ability</label>
+        <input type="text" id="ability" placeholder="Static" />
+      </div>
+      <div class="field">
+        <label>Pokeball</label>
+        <input type="text" id="pokeball" placeholder="Poke Ball" />
+      </div>
+    </div>
+
+    <!-- Checkboxes -->
+    <div class="checks">
+      <label class="check-item">
+        <input type="checkbox" id="shiny" /> Shiny
+      </label>
+      <label class="check-item">
+        <input type="checkbox" id="hiddenAbility" /> Hidden Ability
+      </label>
+      <label class="check-item">
+        <input type="checkbox" id="untradable" /> Untradable
+      </label>
+    </div>
+
+    <!-- IVs + EVs side by side -->
+    <div class="stats-wrapper">
+      <div class="stats-block">
+        <div class="section-label">IVs</div>
+        <div class="row row-3" style="margin-bottom:8px">
+          <div class="stat-cell"><div class="stat-label">HP</div><input type="number" id="iv-hp"  placeholder="0" min="0" max="31" /></div>
+          <div class="stat-cell"><div class="stat-label">ATK</div><input type="number" id="iv-atk" placeholder="0" min="0" max="31" /></div>
+          <div class="stat-cell"><div class="stat-label">DEF</div><input type="number" id="iv-def" placeholder="0" min="0" max="31" /></div>
+        </div>
+        <div class="row row-3">
+          <div class="stat-cell"><div class="stat-label">SPA</div><input type="number" id="iv-spa" placeholder="0" min="0" max="31" /></div>
+          <div class="stat-cell"><div class="stat-label">SPD</div><input type="number" id="iv-spd" placeholder="0" min="0" max="31" /></div>
+          <div class="stat-cell"><div class="stat-label">SPE</div><input type="number" id="iv-spe" placeholder="0" min="0" max="31" /></div>
+        </div>
+      </div>
+
+      <div class="stats-block">
+        <div class="section-label">EVs</div>
+        <div class="row row-3" style="margin-bottom:8px">
+          <div class="stat-cell"><div class="stat-label">HP</div><input type="number" id="ev-hp"  placeholder="0" min="0" max="252" /></div>
+          <div class="stat-cell"><div class="stat-label">ATK</div><input type="number" id="ev-atk" placeholder="0" min="0" max="252" /></div>
+          <div class="stat-cell"><div class="stat-label">DEF</div><input type="number" id="ev-def" placeholder="0" min="0" max="252" /></div>
+        </div>
+        <div class="row row-3">
+          <div class="stat-cell"><div class="stat-label">SPA</div><input type="number" id="ev-spa" placeholder="0" min="0" max="252" /></div>
+          <div class="stat-cell"><div class="stat-label">SPD</div><input type="number" id="ev-spd" placeholder="0" min="0" max="252" /></div>
+          <div class="stat-cell"><div class="stat-label">SPE</div><input type="number" id="ev-spe" placeholder="0" min="0" max="252" /></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Moves -->
+    <div class="moves-field">
+      <label>Moves (one per line)</label>
+      <textarea id="moves" placeholder="Use IDs e.g.: darkpulse"></textarea>
+    </div>
+
+  </div>
+
+  <!-- Fixed bottom button -->
+  <button class="spawn-btn" onclick="spawnPokemon()">
+    <span class="spawn-icon">✦</span> Spawn Pokémon
+  </button>
+
+  <script>
+    function val(id) {
+      const el = document.getElementById(id);
+      if (!el) return undefined;
+      if (el.type === 'checkbox') return el.checked;
+      return el.value.trim() || undefined;
+    }
+
+    function spawnPokemon() {
+      const species = val('species');
+      if (!species) {
+        alert('Species is required.');
+        document.getElementById('species').focus();
+        return;
+      }
+
+      const payload = {
+        species,
+        forme:         val('forme'),
+        nickname:      val('nickname'),
+        level:         val('level') ? Number(val('level')) : undefined,
+        item:          val('item'),
+        nature:        val('nature'),
+        ability:       val('ability'),
+        pokeball:      val('pokeball'),
+        shiny:         document.getElementById('shiny').checked,
+        hiddenAbility: document.getElementById('hiddenAbility').checked,
+        untradable:    document.getElementById('untradable').checked,
+        ivs: {
+          hp:  Number(val('iv-hp')  || 0),
+          atk: Number(val('iv-atk') || 0),
+          def: Number(val('iv-def') || 0),
+          spa: Number(val('iv-spa') || 0),
+          spd: Number(val('iv-spd') || 0),
+          spe: Number(val('iv-spe') || 0),
+        },
+        evs: {
+          hp:  Number(val('ev-hp')  || 0),
+          atk: Number(val('ev-atk') || 0),
+          def: Number(val('ev-def') || 0),
+          spa: Number(val('ev-spa') || 0),
+          spd: Number(val('ev-spd') || 0),
+          spe: Number(val('ev-spe') || 0),
+        },
+        moves: (document.getElementById('moves').value.trim())
+          ? document.getElementById('moves').value.trim().split('\n').map(s => s.trim()).filter(Boolean)
+          : [],
+      };
+
+      // TODO: POST payload to your Roblox game command endpoint
+      console.log('Spawn payload:', payload);
+      alert('Spawn command sent! (configure the endpoint in spawner.html)');
+    }
+  </script>
+</body>
+</html>

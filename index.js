@@ -5,7 +5,8 @@ const session = require('express-session');
 const path = require('path');
 
 const discordRoutes = require('./src/routes/discord');
-const robloxRoutes = require('./src/routes/roblox');
+const robloxRoutes  = require('./src/routes/roblox');
+const spawnerRoutes = require('./src/routes/spawner');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -38,7 +39,8 @@ app.use(
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use('/discord', discordRoutes);
-app.use('/roblox', robloxRoutes);
+app.use('/roblox',  robloxRoutes);
+app.use('/spawner', spawnerRoutes);
 
 // Landing page is served automatically by express.static (public/index.html).
 
